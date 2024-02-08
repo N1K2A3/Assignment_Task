@@ -1,0 +1,39 @@
+-- Query to extract total quantities of each item bought per customer aged 18-35
+SELECT c.customer_id AS Customer, c.age AS Age, i.item_name AS Item, SUM(s.quantity) AS Quantity FROM customers c
+JOIN sales s ON c.customer_id = s.customer_id
+JOIN items i ON s.item_id = i.item_id
+WHERE c.age BETWEEN 18 AND 35 AND s.quantity IS NOT NULL
+GROUP BY c.customer_id, i.item_name
+ORDER BY c.customer_id, i.item_name;
+
+
+import sqlite3
+import pandas as pd
+
+# Connect to the SQLite database
+conn = sqlite3.connect('your_database.db')
+
+# Query to extract data
+query = """
+SELECT c.customer_id AS Customer, c.age AS Age, i.item_name AS Item, s.quantity AS Quantity
+FROM customers c
+JOIN sales s ON c.customer_id = s.customer_id
+JOIN items i ON s.item_id = i.item_id
+WHERE c.age BETWEEN 18 AND 35 AND s.quantity IS NOT NULL
+"""
+
+# Execute the query and read the result into a DataFrame
+df = pd.read_sql_query(query, conn)
+
+# Group by customer and item, summing up the quantities
+df_grouped = df.groupby(['Customer', 'Item']).sum()
+
+# Filter out rows with total quantity equal to 0
+df_filtered = df_grouped[df_grouped['Quantity'] != 0]
+
+# Reset index to make Customer and Item columns accessible
+df_filtered.reset_index(inplace=True)
+
+# Save the DataFrame to a CSV file
+df_filtered.to_csv('output.csv', sep=';', index=False)
+
